@@ -46,3 +46,7 @@ ehthumbs.db
 
 # Dependency caches
 .cache/
+
+# Environment files
+!.env.example
+.env*
