@@ -1,39 +1,68 @@
-# Bandwidth RTC Kotlin Sample Application
+# Bandwidth BRTC Kotlin Sample App
 
-An Android sample app demonstrating the Bandwidth RTC SDK for WebRTC-based voice calling.
+A sample Android application demonstrating how to integrate Bandwidth Real-Time Communications (BRTC) in a Kotlin Android client. This app shows how to create and manage a BRTC endpoint, fetch tokens, and place/receive audio calls using Bandwidth's services.
 
+## Overview
+
+This Android sample contains a single app module that demonstrates:
+- Creating and managing a Bandwidth RTC endpoint
+- Fetching a token from a token server (see [app/src/main/kotlin/com/bandwidth/brtcsample/service/TokenService.kt](app/src/main/kotlin/com/bandwidth/brtcsample/service/TokenService.kt))
+- Placing and receiving audio calls
+- Basic UI for dialing, connecting, and disconnecting calls
+
+## Features
+
+- Make outbound calls to phone numbers
+- Receive inbound calls routed to the app endpoint
+- Simple call controls (call, hang up, disconnect/delete endpoint)
+- Basic audio device handling
 
 ## Prerequisites
 
-- Android Studio
-- A running token server on port 3000 (see server setup below)
-- An Android device or emulator
+- Android Studio (Arctic Fox or newer) with Kotlin support
+- Android SDK (API 21+ recommended)
+- A Bandwidth account with an application and credentials able to mint BRTC tokens
+- A token server or backend that provides a token at `/token` for the app to consume (see `TokenService`)
 
-## Setup
+## Build & Run
 
-### 1. Forward localhost to your device
+Recommended: open the project in Android Studio and run on a device (real device recommended for audio).
 
-If running on a **physical device**, use `adb reverse` so the app can reach your local server via `localhost`:
+From the command line you can build or install an APK:
 
 ```bash
-adb reverse tcp:3000 tcp:3000
+./gradlew assembleDebug
+./gradlew installDebug
 ```
 
-If running on an **emulator**, this step is not needed — the emulator already routes `localhost` to your machine.
-
-### 2. Run the app
-
-Open the project in Android Studio and run the app. The default server URL is pre-filled as `http://localhost:3000`.
-
-### 3. Connect
-
-Tap **Connect** on the launch screen. The app will fetch a token from your local server and register with Bandwidth RTC.
+Or run the app directly from Android Studio.
 
 ## Configuration
 
-The server URL can be changed from the connect screen. The default value is `http://localhost:3000`.
+- The app's `TokenService` expects a server URL and calls `${serverURL.trimEnd('/')}/token` to fetch a token. Update the code or UI entry where you provide your token server URL.
+- Ensure the token server returns a valid Bandwidth BRTC token and optional endpointId as JSON (the `TokenService` parses a `token` field and optional `endpointId`). See [app/src/main/kotlin/com/bandwidth/brtcsample/service/TokenService.kt](app/src/main/kotlin/com/bandwidth/brtcsample/service/TokenService.kt) for implementation.
 
-## Notes
+## UI & Code Structure
 
-- Microphone permission is required for calling.
-- The app supports outbound calls, inbound calls, DTMF, call hold, and call history.
+- `app/src/main/kotlin/com/bandwidth/brtcsample/ui/screen/CallScreen.kt` — Call screen UI and controls
+- `app/src/main/kotlin/com/bandwidth/brtcsample/ui/component/DialpadView.kt` — Dial pad and number input
+- `app/src/main/kotlin/com/bandwidth/brtcsample/viewmodel/CallViewModel.kt` — Call state and business logic
+- `app/src/main/kotlin/com/bandwidth/brtcsample/service/TokenService.kt` — Token fetcher using OkHttp
+
+## Common Tasks
+
+- Debugging network/SSL issues: if your token server uses a self-signed certificate, see `app/src/main/res/xml/network_security_config.xml` and [app/src/main/AndroidManifest.xml](app/src/main/AndroidManifest.xml) which include debug overrides to allow user-installed CAs while debugging.
+- Running on device: grant microphone permission when prompted. If audio is missing, verify microphone permission and that the device's audio isn't muted.
+
+## Troubleshooting
+
+- "Failed to fetch auth token": verify your token server URL and that it returns a JSON object with a `token` field.
+- SSL trust errors: ensure the server provides a full certificate chain or install the certificate on the device for debugging.
+
+## Contributing
+
+Feel free to open issues or PRs to improve the sample. Keep changes focused and include device/Android Studio details when reporting bugs.
+
+## License
+
+See the repository license file for details.
