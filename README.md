@@ -24,23 +24,85 @@ This Android sample contains a single app module that demonstrates:
 - A Bandwidth account with an application and credentials able to mint BRTC tokens
 - A token server or backend that provides a token at `/token` for the app to consume (see `TokenService`)
 
-## Build & Run
+## Development Setup
 
-Recommended: open the project in Android Studio and run on a device (real device recommended for audio).
-
-From the command line you can build or install an APK:
+### 1. Clone the Repository
 
 ```bash
-./gradlew assembleDebug
-./gradlew installDebug
+git clone <repository-url>
+cd javascript-brtc-sdk-sample-app
 ```
 
-Or run the app directly from Android Studio.
+### 2. Install Dependencies
 
-## Configuration
+```bash
+npm install
+```
 
-- The app's `TokenService` expects a server URL and calls `${serverURL.trimEnd('/')}/token` to fetch a token. Update the code or UI entry where you provide your token server URL.
-- Ensure the token server returns a valid Bandwidth BRTC token and optional endpointId as JSON (the `TokenService` parses a `token` field and optional `endpointId`). See [app/src/main/kotlin/com/bandwidth/brtcsample/service/TokenService.kt](app/src/main/kotlin/com/bandwidth/brtcsample/service/TokenService.kt) for implementation.
+### 3. Configure Environment Variables
+
+Copy the example environment file and fill in your Bandwidth credentials:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your values:
+
+```env
+# Bandwidth API Configuration
+HTTP_BASE_URL=https://api.bandwidth.com/v2
+
+# Bandwidth Account Credentials (use either username/password OR client credentials)
+ACCOUNT_ID=your_account_id
+BW_USERNAME=your_username
+BW_PASSWORD=your_password
+# OR
+# BW_ID_CLIENT_ID=your_client_id
+# BW_ID_CLIENT_SECRET=your_client_secret
+
+# Bandwidth Application Settings
+APPLICATION_ID=your_application_id
+FROM_NUMBER=+1XXXXXXXXXX
+
+# Public Callback URL (ngrok or similar)
+CALLBACK_BASE_URL=https://your-callback-url.ngrok-free.app
+```
+
+### 4. Set Up Callback URL
+
+Start ngrok to expose your local server:
+
+```bash
+ngrok http 3000
+```
+
+Copy the ngrok URL and update `CALLBACK_BASE_URL` in `.env.local`.
+
+Update your Bandwidth Voice Application settings:
+- **Callback URL**: `https://your-ngrok-url.ngrok-free.app/api/callbacks/calls/initiate`
+- **Call-initiated callback method**: `POST`
+- **Status URL**: `https://your-ngrok-url.ngrok-free.app/api/callbacks/calls/status`
+- **Status callback method**: `POST`
+
+### 5. Start Backend Server
+
+```bash
+npm start
+```
+This starts the Express server on port 3000.
+
+### 6. Android Studio Setup
+
+First, connect your phone to the computer and boot up the Application in Android Studio.
+
+Then, open a tunnel from your laptop the phone on port 3000
+
+```
+adb reverse tcp:3000 tcp:3000
+```
+
+And now, run the application
 
 ## UI & Code Structure
 

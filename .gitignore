@@ -50,3 +50,6 @@ ehthumbs.db
 # Environment files
 !.env.example
 .env*
+
+# Node Server
+node_modules/
