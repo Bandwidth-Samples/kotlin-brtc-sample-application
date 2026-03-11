@@ -42,9 +42,10 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
 
     // UI State
     var connectionState by mutableStateOf(ConnectionState.DISCONNECTED)
-    var serverURL by mutableStateOf("http://10.0.2.2:3000")
+    var serverURL by mutableStateOf("http://localhost:3000")
     var phoneNumber by mutableStateOf("")
     var isMicEnabled by mutableStateOf(true)
+    var isSpeakerOn by mutableStateOf(false)
     var showError by mutableStateOf(false)
     var errorMessage by mutableStateOf("")
     var showDialpad by mutableStateOf(false)
@@ -52,6 +53,8 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
     var callDuration by mutableLongStateOf(0L)
     var callStats by mutableStateOf<CallStatsSnapshot?>(null)
     var showStatsOverlay by mutableStateOf(false)
+    var isOutboundCall by mutableStateOf(false)
+        private set
 
     // Audio waveform
     val localAudioLevels = mutableStateListOf<Float>()
@@ -141,6 +144,7 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
         callDuration = 0
         stopStatsPolling()
         stopAudioLevelMonitoring()
+        isSpeakerOn = false
         viewModelScope.launch {
             brtc.disconnect()
         }
@@ -161,7 +165,8 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
 
-        connectionState = ConnectionState.IN_CALL
+        isOutboundCall = true
+        connectionState = ConnectionState.RINGING
         statusText = "Calling $formattedPhoneNumber..."
 
         val record = CallDetailRecord(
@@ -189,12 +194,19 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun hangup() {
+        isOutboundCall = false
         finalizeCallRecord()
         callTimerJob?.cancel()
         callTimerJob = null
         callDuration = 0
         stopStatsPolling()
         stopAudioLevelMonitoring()
+        // Transition state synchronously so any pending level-add coroutines that
+        // were queued before stopAudioLevelMonitoring() cleared the list cannot
+        // cause a stale waveform flash on the IN_CALL screen.
+        connectionState = ConnectionState.CONNECTED
+        statusText = "Connected"
+        remoteStream = null
 
         viewModelScope.launch {
             if (phoneNumber.isNotEmpty()) {
@@ -205,15 +217,17 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 } catch (_: Exception) {}
             }
-            connectionState = ConnectionState.CONNECTED
-            statusText = "Connected"
-            remoteStream = null
         }
     }
 
     fun toggleMic() {
         isMicEnabled = !isMicEnabled
         brtc.setMicEnabled(isMicEnabled)
+    }
+
+    fun toggleSpeaker() {
+        isSpeakerOn = !isSpeakerOn
+        brtc.setSpeakerphoneOn(isSpeakerOn)
     }
 
     fun sendDtmf(tone: String) {
@@ -269,6 +283,7 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
 
     fun declineIncomingCall() {
         if (connectionState == ConnectionState.RINGING) {
+            isOutboundCall = false
             remoteStream = null
             connectionState = ConnectionState.CONNECTED
             statusText = "Connected"
@@ -301,7 +316,14 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
 
                 when (connectionState) {
                     ConnectionState.RINGING -> {
-                        // Hold until user accepts
+                        if (isOutboundCall) {
+                            // Remote answered the outbound call
+                            isOutboundCall = false
+                            connectionState = ConnectionState.IN_CALL
+                            statusText = "Connected"
+                            startCallTimer()
+                        }
+                        // else: inbound — hold until user taps Accept
                     }
                     ConnectionState.CONNECTED -> {
                         connectionState = ConnectionState.IN_CALL
@@ -361,7 +383,7 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
         brtc.onReady = { metadata ->
             viewModelScope.launch(Dispatchers.Main) {
                 metadata.endpointId?.let { endpointId = it }
-                statusText = "Ready\n${metadata.endpointId ?: ""}"
+                statusText = "Ready"
             }
         }
     }

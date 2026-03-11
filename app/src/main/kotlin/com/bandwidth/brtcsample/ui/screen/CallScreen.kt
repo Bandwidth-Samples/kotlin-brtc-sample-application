@@ -44,48 +44,74 @@ private fun RingingLayout(viewModel: CallViewModel) {
             Spacer(Modifier.weight(1f))
 
             Icon(
-                Icons.Filled.Business,
+                if (viewModel.isOutboundCall) Icons.Filled.Call else Icons.Filled.Business,
                 contentDescription = null,
                 tint = Color(0xFF2196F3),
                 modifier = Modifier.size(64.dp)
             )
             Spacer(Modifier.height(16.dp))
-            Text("Incoming Call", color = Color.White, fontSize = 30.sp, fontWeight = FontWeight.Light)
-            Text("Incoming Call...", color = Color.White.copy(alpha = 0.7f), fontSize = 18.sp)
+            Text(
+                if (viewModel.isOutboundCall) viewModel.formattedPhoneNumber else "Incoming Call",
+                color = Color.White,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Light
+            )
+            Text(
+                if (viewModel.isOutboundCall) "Ringing..." else "Incoming Call...",
+                color = Color.White.copy(alpha = 0.7f),
+                fontSize = 18.sp
+            )
 
             Spacer(Modifier.weight(1f))
 
-            // Accept / Decline
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(80.dp),
-                modifier = Modifier.padding(bottom = 60.dp)
-            ) {
-                // Decline
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            if (viewModel.isOutboundCall) {
+                // Outbound: Cancel only
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(bottom = 60.dp)
+                ) {
                     IconButton(
                         onClick = { viewModel.declineIncomingCall() },
                         modifier = Modifier
                             .size(70.dp)
                             .background(Color.Red, CircleShape)
                     ) {
-                        Icon(Icons.Filled.CallEnd, contentDescription = "Decline", tint = Color.White, modifier = Modifier.size(28.dp))
+                        Icon(Icons.Filled.CallEnd, contentDescription = "Cancel", tint = Color.White, modifier = Modifier.size(28.dp))
                     }
                     Spacer(Modifier.height(8.dp))
-                    Text("Decline", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                    Text("Cancel", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
                 }
-
-                // Accept
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    IconButton(
-                        onClick = { viewModel.acceptIncomingCall() },
-                        modifier = Modifier
-                            .size(70.dp)
-                            .background(Color(0xFF4CAF50), CircleShape)
-                    ) {
-                        Icon(Icons.Filled.Call, contentDescription = "Accept", tint = Color.White, modifier = Modifier.size(28.dp))
+            } else {
+                // Inbound: Accept / Decline
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(80.dp),
+                    modifier = Modifier.padding(bottom = 60.dp)
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        IconButton(
+                            onClick = { viewModel.declineIncomingCall() },
+                            modifier = Modifier
+                                .size(70.dp)
+                                .background(Color.Red, CircleShape)
+                        ) {
+                            Icon(Icons.Filled.CallEnd, contentDescription = "Decline", tint = Color.White, modifier = Modifier.size(28.dp))
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text("Decline", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
                     }
-                    Spacer(Modifier.height(8.dp))
-                    Text("Accept", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        IconButton(
+                            onClick = { viewModel.acceptIncomingCall() },
+                            modifier = Modifier
+                                .size(70.dp)
+                                .background(Color(0xFF4CAF50), CircleShape)
+                        ) {
+                            Icon(Icons.Filled.Call, contentDescription = "Accept", tint = Color.White, modifier = Modifier.size(28.dp))
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        Text("Accept", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                    }
                 }
             }
         }
@@ -136,32 +162,23 @@ private fun KeypadTab(viewModel: CallViewModel) {
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(Modifier.height(48.dp))
-
-        // Endpoint ID
-        viewModel.endpointId?.let { eid ->
-            if (eid.isNotEmpty()) {
-                Text("Endpoint ID", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(eid, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
-                Spacer(Modifier.height(12.dp))
-            }
-        }
+        Spacer(Modifier.height(16.dp))
 
         // Phone number display
         Text(
             viewModel.formattedPhoneNumber,
-            fontSize = 36.sp,
+            fontSize = 28.sp,
             fontWeight = FontWeight.Light,
             maxLines = 1,
             modifier = Modifier.padding(horizontal = 32.dp)
         )
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(12.dp))
 
         // Dialpad
         DialpadView(onDigit = { viewModel.dialpadInput(it) })
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(8.dp))
 
         // Call + delete row
         Row(
@@ -171,13 +188,13 @@ private fun KeypadTab(viewModel: CallViewModel) {
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Spacer(Modifier.size(80.dp))
+            Spacer(Modifier.size(56.dp))
 
             // Green call button
             IconButton(
                 onClick = { viewModel.call() },
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(72.dp)
                     .background(Color(0xFF4CAF50), CircleShape)
             ) {
                 Icon(Icons.Filled.Call, contentDescription = "Call", tint = Color.White, modifier = Modifier.size(32.dp))
@@ -187,22 +204,22 @@ private fun KeypadTab(viewModel: CallViewModel) {
             if (viewModel.phoneNumber.isNotEmpty()) {
                 IconButton(
                     onClick = { viewModel.phoneNumber = viewModel.phoneNumber.dropLast(1) },
-                    modifier = Modifier.size(80.dp)
+                    modifier = Modifier.size(64.dp)
                 ) {
                     Icon(Icons.Filled.Backspace, contentDescription = "Delete", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
-                Spacer(Modifier.size(80.dp))
+                Spacer(Modifier.size(64.dp))
             }
         }
 
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(16.dp))
 
         // Bottom controls
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .padding(bottom = 12.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             // Mute
@@ -210,22 +227,33 @@ private fun KeypadTab(viewModel: CallViewModel) {
                 icon = Icons.Filled.MicOff,
                 label = "Mute",
                 isActive = !viewModel.isMicEnabled,
+                buttonSize = 60.dp,
+                iconSize = 20.dp,
                 onClick = { viewModel.toggleMic() }
             )
 
+            // Speaker
+            CallControlButton(
+                icon = Icons.Filled.VolumeUp,
+                label = "Speaker",
+                isActive = viewModel.isSpeakerOn,
+                activeColor = Color(0xFF4CAF50),
+                buttonSize = 60.dp,
+                iconSize = 20.dp,
+                onClick = { viewModel.toggleSpeaker() }
+            )
+
             // Disconnect
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                IconButton(
-                    onClick = { viewModel.disconnect() },
-                    modifier = Modifier
-                        .size(70.dp)
-                        .background(Color.Gray, CircleShape)
-                ) {
-                    Icon(Icons.Filled.Close, contentDescription = "Disconnect", tint = Color.White, modifier = Modifier.size(20.dp))
-                }
-                Spacer(Modifier.height(6.dp))
-                Text("Disconnect", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
+            CallControlButton(
+                icon = Icons.Filled.Close,
+                label = "Disconnect",
+                isActive = true,
+                activeColor = Color.White,
+                tint = Color.White,
+                buttonSize = 60.dp,
+                iconSize = 20.dp,
+                onClick = { viewModel.disconnect() }
+            )
         }
     }
 }
@@ -310,6 +338,15 @@ private fun InCallLayout(viewModel: CallViewModel) {
                 )
 
                 CallControlButton(
+                    icon = Icons.Filled.VolumeUp,
+                    label = "Speaker",
+                    isActive = viewModel.isSpeakerOn,
+                    activeColor = Color(0xFF4CAF50),
+                    tint = Color.White,
+                    onClick = { viewModel.toggleSpeaker() }
+                )
+
+                CallControlButton(
                     icon = Icons.Filled.Dialpad,
                     label = "Keypad",
                     isActive = viewModel.showDialpad,
@@ -341,20 +378,22 @@ fun CallControlButton(
     isActive: Boolean,
     tint: Color = MaterialTheme.colorScheme.onSurface,
     activeColor: Color = Color.Red,
+    buttonSize: androidx.compose.ui.unit.Dp = 70.dp,
+    iconSize: androidx.compose.ui.unit.Dp = 22.dp,
     onClick: () -> Unit
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         IconButton(
             onClick = onClick,
             modifier = Modifier
-                .size(70.dp)
+                .size(buttonSize)
                 .background(Color.Gray.copy(alpha = 0.3f), CircleShape)
         ) {
             Icon(
                 icon,
                 contentDescription = label,
                 tint = if (isActive) activeColor else tint,
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier.size(iconSize)
             )
         }
         Spacer(Modifier.height(6.dp))
