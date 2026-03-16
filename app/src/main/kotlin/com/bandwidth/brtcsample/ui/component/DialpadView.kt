@@ -32,11 +32,11 @@ fun DialpadView(
 ) {
     Column(
         modifier = modifier.padding(vertical = 4.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         for (row in keys) {
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                 for (key in row) {
                     DialpadButton(key = key, onClick = { onDigit(key.digit) })
                 }
@@ -50,17 +50,17 @@ private fun DialpadButton(key: DialpadKey, onClick: () -> Unit) {
     val interactionSource = remember { MutableInteractionSource() }
     Box(
         modifier = Modifier
-            .size(64.dp)
+            .size(72.dp)
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
             .clickable(interactionSource = interactionSource, indication = null) { onClick() },
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(key.digit, fontSize = 24.sp, fontWeight = FontWeight.Light)
+            Text(key.digit, fontSize = 32.sp, fontWeight = FontWeight.Light)
             Text(
                 text = key.letters.ifEmpty { "\u00A0" },
-                fontSize = 8.sp,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.SemiBold,
                 letterSpacing = 1.sp
             )
