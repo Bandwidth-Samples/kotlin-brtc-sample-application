@@ -1,9 +1,5 @@
 package com.bandwidth.brtcsample.ui.screen
 
-import android.Manifest
-import android.content.pm.PackageManager
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -21,7 +17,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PhoneForwarded
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,13 +28,11 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import com.bandwidth.brtcsample.viewmodel.CallViewModel
 
 @Composable
@@ -89,7 +82,6 @@ fun ConnectScreen(viewModel: CallViewModel) {
             if (!isUrlFocused) {
                 Spacer(Modifier.height(80.dp))
 
-                // App icon
                 Box(
                     modifier = Modifier
                         .size(80.dp)
@@ -114,7 +106,6 @@ fun ConnectScreen(viewModel: CallViewModel) {
 
                 Spacer(Modifier.height(16.dp))
 
-                // Title
                 Text(
                     "Bandwidth RTC",
                     fontSize = 24.sp,
@@ -130,7 +121,6 @@ fun ConnectScreen(viewModel: CallViewModel) {
 
                 Spacer(Modifier.height(36.dp))
 
-                // Feature rows
                 Column(
                     modifier = Modifier.alpha(alpha),
                     verticalArrangement = Arrangement.spacedBy(24.dp)
@@ -152,7 +142,6 @@ fun ConnectScreen(viewModel: CallViewModel) {
                 Spacer(Modifier.height(36.dp))
             }
 
-            // Server URL field
             OutlinedTextField(
                 value = viewModel.serverURL,
                 onValueChange = { viewModel.serverURL = it },
@@ -176,7 +165,6 @@ fun ConnectScreen(viewModel: CallViewModel) {
             if (!isUrlFocused) {
                 Spacer(Modifier.height(24.dp))
 
-                // Connect button
                 Button(
                     onClick = { viewModel.connect() },
                     modifier = Modifier

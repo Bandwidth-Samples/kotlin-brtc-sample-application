@@ -35,7 +35,6 @@ fun DetailsScreen(viewModel: CallViewModel) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Endpoint ID Section
         DetailsSectionCard(title = "Endpoint") {
             val endpointId = viewModel.endpointId
             if (!endpointId.isNullOrEmpty()) {
@@ -72,18 +71,15 @@ fun DetailsScreen(viewModel: CallViewModel) {
             }
         }
 
-        // Connection Status Section
         DetailsSectionCard(title = "Connection Status") {
             DetailsStatusRow("State", value = viewModel.connectionState.displayName)
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             DetailsStatusRow("Status", value = viewModel.statusText.ifEmpty { "—" })
         }
 
-        // Call Statistics Section
         val stats = viewModel.callStats
         DetailsSectionCard(title = "Call Statistics") {
             if (stats != null) {
-                // Audio Quality
                 Text(
                     "Audio Quality",
                     fontSize = 13.sp,
@@ -106,7 +102,6 @@ fun DetailsScreen(viewModel: CallViewModel) {
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-                // Packet Statistics
                 Text(
                     "Packet Statistics",
                     fontSize = 13.sp,
@@ -123,7 +118,6 @@ fun DetailsScreen(viewModel: CallViewModel) {
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
 
-                // Bitrate
                 Text(
                     "Bitrate",
                     fontSize = 13.sp,
@@ -142,7 +136,6 @@ fun DetailsScreen(viewModel: CallViewModel) {
             }
         }
 
-        // Call Duration Section (only when in a call)
         if (viewModel.connectionState == ConnectionState.IN_CALL) {
             DetailsSectionCard(title = "Call Duration") {
                 Row(

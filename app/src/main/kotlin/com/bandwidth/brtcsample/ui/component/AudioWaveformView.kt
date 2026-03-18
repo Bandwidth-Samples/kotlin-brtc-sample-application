@@ -49,7 +49,6 @@ fun AudioWaveformView(
             val barWidth = ((size.width - totalSpacing) / barCount).coerceAtLeast(1f)
             val midY = size.height / 2f
 
-            // Pad levels
             val samples = if (levels.size >= barCount) {
                 levels.takeLast(barCount)
             } else {

@@ -6,7 +6,6 @@ import { CallsApi, Configuration } from 'bandwidth-sdk';
 const app = express();
 app.use(cors());
 
-// Log ALL incoming requests BEFORE body parsing
 app.use((req, res, next) => {
     console.log(`\n>>> ${req.method} ${req.path} [${req.get('content-type') || 'no content-type'}]`);
     next();
@@ -16,7 +15,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.text({ type: '*/xml' }));
 
-// Log parsed body
 app.use((req, res, next) => {
     if (req.body && typeof req.body === 'object' && Object.keys(req.body).length > 0) {
         console.log(JSON.stringify(req.body, null, 2));
@@ -65,12 +63,8 @@ const {
     PORT,
 } = getEnvVars();
 
-// Endpoint ID -> Available Status
 let endpointAvailableMap = new Map<string, boolean>();
-// Call ID -> Endpoint ID
 let endpointCallIdMap = new Map<string, string>();
-
-// --- OAuth Token Management ---
 
 let idToken: string = '';
 let idTokenExpiration: number = 0;
@@ -96,8 +90,6 @@ async function getAuthToken(): Promise<string> {
     }
     return idToken;
 }
-
-// --- Endpoint / Call Helpers ---
 
 async function placeCall(endpointId: string, toNumber: string, fromNumber: string): Promise<string> {
     if (!endpointAvailableMap.has(endpointId)) {
@@ -189,9 +181,6 @@ function processInboundCall(callId: string): string {
 </Response>`;
 }
 
-// --- Routes ---
-
-// GET /token - Create a BRTC endpoint and return the JWT token
 app.get('/token', async (req: Request, res: Response) => {
     try {
         const authToken = await getAuthToken();
@@ -210,7 +199,7 @@ app.get('/token', async (req: Request, res: Response) => {
                 direction: 'BIDIRECTIONAL',
                 eventCallbackUrl: `${CALLBACK_BASE_URL}/callbacks/bandwidth`,
                 eventFallbackUrl: `${CALLBACK_BASE_URL}/callbacks/bandwidth`,
-                tag: JSON.stringify({ source: 'ios-sample-app' }),
+                tag: JSON.stringify({ source: 'kotlin-sample-app' }),
             }),
         });
 
@@ -234,7 +223,6 @@ app.get('/token', async (req: Request, res: Response) => {
     }
 });
 
-// DELETE /api/endpoint/:endpointId - Delete a BRTC endpoint
 app.delete('/api/endpoint/:endpointId', async (req: Request, res: Response) => {
     const endpointId = req.params.endpointId;
     if (!endpointId) {
@@ -267,7 +255,6 @@ app.delete('/api/endpoint/:endpointId', async (req: Request, res: Response) => {
     }
 });
 
-// POST /callbacks/bandwidth - BRTC endpoint events AND incoming PSTN calls
 app.post('/callbacks/bandwidth', async (req: Request, res: Response) => {
     const event = req.body;
     console.log('Callback event:', JSON.stringify(event, null, 2));
@@ -277,7 +264,6 @@ app.post('/callbacks/bandwidth', async (req: Request, res: Response) => {
     const toType: string = event.toType;
     let to: string = event.to;
 
-    // --- BRTC endpoint events ---
     switch (eventType) {
         case 'endpointIneligible':
             claimEndpoint(endpointId);
@@ -300,7 +286,6 @@ app.post('/callbacks/bandwidth', async (req: Request, res: Response) => {
             return res.sendStatus(200);
     }
 
-    // --- Incoming PSTN call (Voice API eventType: "initiate") ---
     if (event.eventType === 'initiate' && event.direction === 'inbound') {
         console.log(`Incoming PSTN call: ${event.from} -> ${event.to}, callId=${event.callId}`);
         const xmlResponse = processInboundCall(event.callId);
@@ -316,7 +301,6 @@ app.post('/callbacks/bandwidth', async (req: Request, res: Response) => {
     res.sendStatus(200);
 });
 
-// POST /callbacks/bandwidth/status - Voice API status events (disconnect, etc.)
 app.post('/callbacks/bandwidth/status', (req: Request, res: Response) => {
     const event = req.body;
     console.log('Voice status event:', JSON.stringify(event, null, 2));
@@ -329,7 +313,6 @@ app.post('/callbacks/bandwidth/status', (req: Request, res: Response) => {
     res.sendStatus(200);
 });
 
-// POST /calls/answer - BXML callback when an outbound call is answered
 app.post('/calls/answer', (req: Request, res: Response) => {
     const callId: string = req.body.callId;
     const xmlResponse = processInboundCall(callId);
@@ -337,7 +320,6 @@ app.post('/calls/answer', (req: Request, res: Response) => {
     res.type('application/xml').send(xmlResponse);
 });
 
-// POST /calls/status - Call status updates (disconnect, redirect)
 app.post('/calls/status', async (req: Request, res: Response) => {
     const callId: string = req.body.callId;
     const eventType: string = req.body.eventType;
@@ -357,7 +339,6 @@ app.post('/calls/status', async (req: Request, res: Response) => {
     }
 });
 
-// POST /simulate-incoming-call - Place a test call to a specific endpoint
 app.post('/simulate-incoming-call', async (req: Request, res: Response) => {
     const { endpointId, toNumber, fromNumber } = req.body;
     try {
@@ -369,12 +350,10 @@ app.post('/simulate-incoming-call', async (req: Request, res: Response) => {
     }
 });
 
-// GET /health
 app.get('/health', (req: Request, res: Response) => {
     res.json({ status: 'ok' });
 });
 
-// GET /debug/endpoints
 app.get('/debug/endpoints', (req: Request, res: Response) => {
     const available: string[] = [];
     const unavailable: string[] = [];
@@ -389,7 +368,6 @@ app.get('/debug/endpoints', (req: Request, res: Response) => {
     });
 });
 
-// Catch-all
 app.all('*', (req: Request, res: Response) => {
     console.log(`\n!!! UNMATCHED ROUTE: ${req.method} ${req.path}`);
     res.sendStatus(404);

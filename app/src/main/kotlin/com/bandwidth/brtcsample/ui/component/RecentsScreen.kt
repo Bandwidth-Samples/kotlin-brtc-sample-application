@@ -112,7 +112,6 @@ private fun CallRecordRow(record: CallDetailRecord, onCall: () -> Unit) {
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Direction arrow
         Icon(
             if (record.direction == CallDirection.OUTBOUND) Icons.Filled.CallMade else Icons.Filled.CallReceived,
             contentDescription = null,

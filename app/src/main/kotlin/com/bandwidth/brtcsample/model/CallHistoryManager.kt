@@ -17,10 +17,6 @@ class CallHistoryManager {
         }
     }
 
-    fun deleteRecord(id: UUID) {
-        records.removeAll { it.id == id }
-    }
-
     fun clearAll() {
         records.clear()
     }

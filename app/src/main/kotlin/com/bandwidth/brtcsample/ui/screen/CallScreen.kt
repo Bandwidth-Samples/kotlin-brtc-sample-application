@@ -66,7 +66,6 @@ private fun RingingLayout(viewModel: CallViewModel) {
             Spacer(Modifier.weight(1f))
 
             if (viewModel.isOutboundCall) {
-                // Outbound: Cancel only
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.padding(bottom = 60.dp)
@@ -83,7 +82,6 @@ private fun RingingLayout(viewModel: CallViewModel) {
                     Text("Cancel", color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
                 }
             } else {
-                // Inbound: Accept / Decline
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(80.dp),
                     modifier = Modifier.padding(bottom = 60.dp)
@@ -171,7 +169,6 @@ private fun KeypadTab(viewModel: CallViewModel) {
     ) {
         Spacer(Modifier.height(16.dp))
 
-        // Phone number display
         Text(
             viewModel.formattedPhoneNumber,
             fontSize = 28.sp,
@@ -182,12 +179,10 @@ private fun KeypadTab(viewModel: CallViewModel) {
 
         Spacer(Modifier.height(8.dp))
 
-        // Dialpad
         DialpadView(onDigit = { viewModel.dialpadInput(it) })
 
         Spacer(Modifier.height(8.dp))
 
-        // Call + delete row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -197,7 +192,6 @@ private fun KeypadTab(viewModel: CallViewModel) {
         ) {
             Spacer(Modifier.size(56.dp))
 
-            // Green call button - Reduced size
             IconButton(
                 onClick = { viewModel.call() },
                 modifier = Modifier
@@ -207,7 +201,6 @@ private fun KeypadTab(viewModel: CallViewModel) {
                 Icon(Icons.Filled.Call, contentDescription = "Call", tint = Color.White, modifier = Modifier.size(32.dp))
             }
 
-            // Delete button
             if (viewModel.phoneNumber.isNotEmpty()) {
                 IconButton(
                     onClick = { viewModel.phoneNumber = viewModel.phoneNumber.dropLast(1) },
@@ -222,14 +215,12 @@ private fun KeypadTab(viewModel: CallViewModel) {
 
         Spacer(Modifier.weight(1f))
 
-        // Bottom controls
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            // Mute
             CallControlButton(
                 icon = Icons.Filled.MicOff,
                 label = "Mute",
@@ -239,7 +230,6 @@ private fun KeypadTab(viewModel: CallViewModel) {
                 onClick = { viewModel.toggleMic() }
             )
 
-            // Speaker
             CallControlButton(
                 icon = Icons.Filled.VolumeUp,
                 label = "Speaker",
@@ -250,7 +240,6 @@ private fun KeypadTab(viewModel: CallViewModel) {
                 onClick = { viewModel.toggleSpeaker() }
             )
 
-            // Disconnect
             CallControlButton(
                 icon = Icons.Filled.Close,
                 label = "Disconnect",
@@ -273,7 +262,6 @@ private fun InCallLayout(viewModel: CallViewModel) {
             .background(Color.Black)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // Stats overlay
             viewModel.callStats?.let { stats ->
                 StatsOverlay(
                     stats = stats,
@@ -291,7 +279,6 @@ private fun InCallLayout(viewModel: CallViewModel) {
                 ) {
                     Spacer(Modifier.weight(1f))
                     
-                    // Display digits as they are typed
                     Text(
                         viewModel.phoneNumber,
                         color = Color.White,
@@ -307,7 +294,6 @@ private fun InCallLayout(viewModel: CallViewModel) {
                     
                     Spacer(Modifier.weight(1f))
 
-                    // Keypad button (to hide) + End Call
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -339,7 +325,6 @@ private fun InCallLayout(viewModel: CallViewModel) {
             } else {
                 Spacer(Modifier.weight(1f))
 
-                // Contact info + timer
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
@@ -354,7 +339,6 @@ private fun InCallLayout(viewModel: CallViewModel) {
 
                 Spacer(Modifier.height(24.dp))
 
-                // Audio waveforms
                 Column(
                     modifier = Modifier.padding(horizontal = 20.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -373,7 +357,6 @@ private fun InCallLayout(viewModel: CallViewModel) {
 
                 Spacer(Modifier.weight(1f))
 
-                // Bottom controls
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()

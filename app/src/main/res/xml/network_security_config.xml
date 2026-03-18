@@ -2,7 +2,6 @@
 <network-security-config>
     <debug-overrides>
         <trust-anchors>
-            <!-- Trust user-installed CAs in debug builds (e.g. self-signed certs) -->
             <certificates src="user" />
             <certificates src="system" />
         </trust-anchors>

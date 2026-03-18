@@ -32,7 +32,6 @@ fun StatsOverlay(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        // Pill badge
         val qualityColor = getQualityColor(stats)
         Row(
             modifier = Modifier
@@ -63,7 +62,6 @@ fun StatsOverlay(
             )
         }
 
-        // Detail panel
         AnimatedVisibility(
             visible = isExpanded,
             enter = expandVertically(),

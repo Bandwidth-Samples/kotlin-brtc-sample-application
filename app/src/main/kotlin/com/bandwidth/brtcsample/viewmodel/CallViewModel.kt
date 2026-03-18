@@ -40,7 +40,6 @@ enum class ConnectionState {
 
 class CallViewModel(application: Application) : AndroidViewModel(application) {
 
-    // UI State
     var connectionState by mutableStateOf(ConnectionState.DISCONNECTED)
     var serverURL by mutableStateOf("http://localhost:3000")
     var phoneNumber by mutableStateOf("")
@@ -56,7 +55,6 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
     var isOutboundCall by mutableStateOf(false)
         private set
 
-    // Audio waveform
     val localAudioLevels = mutableStateListOf<Float>()
     val remoteAudioLevels = mutableStateListOf<Float>()
     private val waveformCapacity = 50
@@ -87,10 +85,8 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
             return phoneNumber
         }
 
-    // Call history
     val callHistory = CallHistoryManager()
 
-    // Private
     private val brtc = BandwidthRTC(application.applicationContext, logLevel = LogLevel.DEBUG)
     private val tokenService = TokenService()
     private var localStream: RtcStream? = null
@@ -102,15 +98,12 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
     var endpointId: String? by mutableStateOf(null)
         private set
 
-    // Audio level accumulators
     private val localAccumulator = AudioLevelAccumulator()
     private val remoteAccumulator = AudioLevelAccumulator()
 
     init {
         setupCallbacks()
     }
-
-    // MARK: - Actions
 
     fun connect() {
         if (connectionState != ConnectionState.DISCONNECTED) return
@@ -307,8 +300,6 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // MARK: - Private
-
     private fun setupCallbacks() {
         brtc.onStreamAvailable = { stream ->
             viewModelScope.launch(Dispatchers.Main) {
@@ -317,13 +308,11 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
                 when (connectionState) {
                     ConnectionState.RINGING -> {
                         if (isOutboundCall) {
-                            // Remote answered the outbound call
                             isOutboundCall = false
                             connectionState = ConnectionState.IN_CALL
                             statusText = "Connected"
                             startCallTimer()
                         }
-                        // else: inbound — hold until user taps Accept
                     }
                     ConnectionState.CONNECTED -> {
                         connectionState = ConnectionState.IN_CALL
@@ -484,7 +473,6 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
     }
 }
 
-// Audio Level Accumulator
 private class AudioLevelAccumulator {
     private var sumSq: Float = 0f
     private var frameCount = 0

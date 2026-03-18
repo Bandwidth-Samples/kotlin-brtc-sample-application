@@ -36,7 +36,6 @@ android {
 dependencies {
     implementation(project(":bandwidthrtc"))
 
-    // Use a stable Compose BOM to ensure all compose libraries are compatible
     val composeBom = platform("androidx.compose:compose-bom:2024.09.02")
     implementation(composeBom)
     implementation("androidx.compose.ui:ui")
@@ -44,24 +43,12 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
-    
-    // Permissions
     implementation("com.google.accompanist:accompanist-permissions:0.36.0")
-
-    // Activity + ViewModel
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.5")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.5")
-
-    // Navigation
-    implementation("androidx.navigation:navigation-compose:2.8.1")
-
-    // OkHttp for token service
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
-
-    // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
