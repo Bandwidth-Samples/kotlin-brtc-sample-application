@@ -473,7 +473,7 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
     }
 }
 
-private class AudioLevelAccumulator {
+internal class AudioLevelAccumulator {
     private var sumSq: Float = 0f
     private var frameCount = 0
     private val lock = Any()
