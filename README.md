@@ -1,5 +1,7 @@
 # Bandwidth WebRTC Kotlin Android Dialer Sample
 
+![BRTC Android App Icon](app/src/main/res/mipmap-xxxhdpi/ic_launcher.png)
+
 A native Android calling app powered by [Bandwidth's WebRTC (BRTC) SDK](https://dev.bandwidth.com/docs/brtc), demonstrating outbound PSTN dialing and live call quality monitoring.
 
 ## Overview
