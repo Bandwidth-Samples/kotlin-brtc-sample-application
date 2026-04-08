@@ -3,11 +3,15 @@ package com.bandwidth.brtcsample.service
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+
+data class CallStatus(val status: String, val callId: String? = null, val cause: String? = null)
 
 class TokenService {
     private val client = OkHttpClient.Builder()
@@ -51,5 +55,31 @@ class TokenService {
             throw IOException("Invalid token response from server")
         }
         TokenResult(token, null)
+    }
+
+    /** Poll the PSTN call status for an endpoint. */
+    suspend fun getCallStatus(serverURL: String, endpointId: String): CallStatus = withContext(Dispatchers.IO) {
+        val url = "${serverURL.trimEnd('/')}/api/endpoint/$endpointId/call-status"
+        val request = Request.Builder().url(url).get().build()
+        val response = client.newCall(request).execute()
+        val body = response.body?.string() ?: throw IOException("Empty response")
+        val json = JSONObject(body)
+        CallStatus(
+            status = json.getString("status"),
+            callId = json.optString("callId", null),
+            cause = json.optString("cause", null)
+        )
+    }
+
+    /** Tell the server to hang up the PSTN leg for an endpoint. */
+    suspend fun hangupCall(serverURL: String, endpointId: String): Unit = withContext(Dispatchers.IO) {
+        val url = "${serverURL.trimEnd('/')}/api/endpoint/$endpointId/hangup"
+        val request = Request.Builder().url(url)
+            .post("".toRequestBody("application/json".toMediaType()))
+            .build()
+        val response = client.newCall(request).execute()
+        if (!response.isSuccessful) {
+            throw IOException("Hangup failed with status ${response.code}")
+        }
     }
 }
