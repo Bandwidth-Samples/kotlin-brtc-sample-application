@@ -1,6 +1,7 @@
 package com.bandwidth.brtcsample.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -95,6 +96,7 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
     private var statsTimerJob: Job? = null
     private var previousStatsSnapshot: CallStatsSnapshot? = null
     private var activeCallRecordId: UUID? = null
+    private var callStatusPollJob: Job? = null
     var endpointId: String? by mutableStateOf(null)
         private set
 
@@ -177,6 +179,7 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 if (result.accepted) {
                     statusText = "Ringing..."
+                    startCallStatusPolling()
                 } else {
                     statusText = "Call not accepted"
                 }
@@ -194,6 +197,7 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
         callDuration = 0
         stopStatsPolling()
         stopAudioLevelMonitoring()
+        stopCallStatusPolling()
         // Transition state synchronously so any pending level-add coroutines that
         // were queued before stopAudioLevelMonitoring() cleared the list cannot
         // cause a stale waveform flash on the IN_CALL screen.
@@ -208,7 +212,21 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
                         endpoint = e164PhoneNumber,
                         type = EndpointType.PHONE_NUMBER
                     )
-                } catch (_: Exception) {}
+                } catch (e: Exception) {
+                    Log.e("CallViewModel", "BRTC hangup failed: ${e.message}")
+                }
+            }
+
+            // Notify backend to terminate the PSTN leg
+            val eid = endpointId
+            Log.d("CallViewModel", "Backend hangup: endpointId=$eid, serverURL=$serverURL")
+            if (eid != null) {
+                try {
+                    tokenService.hangupCall(serverURL, eid)
+                    Log.d("CallViewModel", "Backend hangup succeeded")
+                } catch (e: Exception) {
+                    Log.d("CallViewModel", "Backend hangup failed: ${e.message}")
+                }
             }
         }
     }
@@ -275,18 +293,7 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun declineIncomingCall() {
-        if (connectionState == ConnectionState.RINGING) {
-            isOutboundCall = false
-            remoteStream = null
-            connectionState = ConnectionState.CONNECTED
-            statusText = "Connected"
-
-            callHistory.addRecord(CallDetailRecord(
-                phoneNumber = "Incoming Call",
-                direction = CallDirection.INBOUND,
-                duration = 0
-            ))
-        } else if (connectionState == ConnectionState.IN_CALL) {
+        if (connectionState == ConnectionState.RINGING || connectionState == ConnectionState.IN_CALL) {
             hangup()
         }
     }
@@ -304,6 +311,7 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
         brtc.onStreamAvailable = { stream ->
             viewModelScope.launch(Dispatchers.Main) {
                 remoteStream = stream
+                stopCallStatusPolling()
 
                 when (connectionState) {
                     ConnectionState.RINGING -> {
@@ -465,6 +473,38 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
         val id = activeCallRecordId ?: return
         callHistory.updateDuration(id, callDuration)
         activeCallRecordId = null
+    }
+
+    // MARK: - Call Status Polling
+
+    private fun startCallStatusPolling() {
+        stopCallStatusPolling()
+        val eid = endpointId ?: return
+        Log.d("CallViewModel", "Starting call status polling for endpoint $eid")
+
+        callStatusPollJob = viewModelScope.launch {
+            while (isActive) {
+                delay(3000)
+                try {
+                    val status = tokenService.getCallStatus(serverURL, eid)
+                    Log.d("CallViewModel", "Poll status: ${status.status} (cause: ${status.cause})")
+
+                    if (status.status == "disconnected") {
+                        Log.d("CallViewModel", "PSTN call rejected/disconnected — ending call locally")
+                        stopCallStatusPolling()
+                        launch(Dispatchers.Main) { hangup() }
+                        break
+                    }
+                } catch (e: Exception) {
+                    Log.d("CallViewModel", "Poll error: ${e.message}")
+                }
+            }
+        }
+    }
+
+    private fun stopCallStatusPolling() {
+        callStatusPollJob?.cancel()
+        callStatusPollJob = null
     }
 
     private fun showErrorMessage(message: String) {
