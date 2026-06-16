@@ -2,10 +2,10 @@ apiVersion: backstage.io/v1alpha1
 kind: Location
 metadata:
   schemaVersion: v1.0.0
-  name: brtc-kotlin-sample-application-location
-  description: Links to additional entities in the brtc-kotlin-sample-application repository.
+  name: kotlin-brtc-sample-application-location
+  description: Links to additional entities in the kotlin-brtc-sample-application repository.
   annotations:
-    github.com/project-slug: Bandwidth/brtc-kotlin-sample-application
+    github.com/project-slug: Bandwidth/kotlin-brtc-sample-application
 spec:
   targets:
     - ./component.yaml

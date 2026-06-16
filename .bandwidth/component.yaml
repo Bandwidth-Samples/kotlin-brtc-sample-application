@@ -2,16 +2,16 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   schemaVersion: v1.0.0
-  name: brtc-kotlin-sample-application
+  name: kotlin-brtc-sample-application
   description: Sample application that implements the BRTC Kotlin SDK
   annotations:
-    github.com/project-slug: Bandwidth/brtc-kotlin-sample-application
+    github.com/project-slug: Bandwidth/kotlin-brtc-sample-application
   organization: BW
-  costCenter: 
+  costCenter:
   platformType: AWS
   buildPlatform: GitHub Actions
 spec:
   type: Service
   owner: github/band-programmable-voice
   lifecycle: Prototype
-  
+
