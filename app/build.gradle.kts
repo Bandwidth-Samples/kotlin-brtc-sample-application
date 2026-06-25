@@ -34,7 +34,10 @@ android {
 }
 
 dependencies {
-    implementation(project(":bandwidthrtc"))
+    // Bandwidth RTC SDK v1.0.4
+    implementation(files("libs/bandwidthrtc-release.aar"))
+    implementation("io.getstream:stream-webrtc-android:1.3.7")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
 
     val composeBom = platform("androidx.compose:compose-bom:2024.09.02")
     implementation(composeBom)

@@ -16,5 +16,3 @@ dependencyResolutionManagement {
 
 rootProject.name = "BRTCSampleApp"
 include(":app")
-include(":bandwidthrtc")
-project(":bandwidthrtc").projectDir = file("../kotlin-brtc-sdk/bandwidthrtc")

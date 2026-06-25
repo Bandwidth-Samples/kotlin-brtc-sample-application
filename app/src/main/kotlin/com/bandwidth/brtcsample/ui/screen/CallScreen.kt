@@ -291,7 +291,30 @@ private fun InCallLayout(viewModel: CallViewModel) {
                         onDigit = { viewModel.sendDtmf(it) },
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
-                    
+
+                    Spacer(Modifier.height(12.dp))
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 32.dp)
+                    ) {
+                        Text(
+                            "Tone Duration: ${viewModel.dtmfDuration}ms",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 12.sp
+                        )
+                        Slider(
+                            value = viewModel.dtmfDuration.toFloat(),
+                            onValueChange = { viewModel.dtmfDuration = it.toInt() },
+                            valueRange = 40f..6000f,
+                            colors = SliderDefaults.colors(
+                                thumbColor = Color.White,
+                                activeTrackColor = Color(0xFF4CAF50)
+                            )
+                        )
+                    }
+
                     Spacer(Modifier.weight(1f))
 
                     Row(

@@ -3,6 +3,7 @@ package com.bandwidth.brtcsample.viewmodel
 import android.app.Application
 import android.util.Log
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -53,6 +54,7 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
     var callDuration by mutableLongStateOf(0L)
     var callStats by mutableStateOf<CallStatsSnapshot?>(null)
     var showStatsOverlay by mutableStateOf(false)
+    var dtmfDuration by mutableIntStateOf(300)
     var isOutboundCall by mutableStateOf(false)
         private set
 
@@ -242,7 +244,7 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun sendDtmf(tone: String) {
-        brtc.sendDtmf(tone)
+        brtc.sendDtmf(tone, duration = dtmfDuration)
     }
 
     fun simulateIncomingCall() {
