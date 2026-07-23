@@ -35,8 +35,11 @@ android {
 
 dependencies {
     // Bandwidth RTC SDK v1.0.6 (released .aar; not a POM-carrying dependency, so
-    // its own runtime dependencies must be declared explicitly below).
-    implementation(files("libs/bandwidthrtc-release.aar"))
+    // its own runtime dependencies must be declared explicitly below). Bump this
+    // dependency by downloading the new release's .aar and updating both the
+    // filename here and in app/libs/ — the version is pinned by filename since a
+    // flat file() dependency carries no version metadata of its own.
+    implementation(files("libs/bandwidthrtc-1.0.6.aar"))
     implementation("io.getstream:stream-webrtc-android:1.3.7")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
 
