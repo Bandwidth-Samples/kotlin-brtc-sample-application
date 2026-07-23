@@ -18,6 +18,7 @@ import com.bandwidth.rtc.BandwidthRTC
 import com.bandwidth.rtc.types.CallStatsSnapshot
 import com.bandwidth.rtc.types.EndpointType
 import com.bandwidth.rtc.types.RtcAuthParams
+import com.bandwidth.rtc.types.RtcOptions
 import com.bandwidth.rtc.types.RtcStream
 import com.bandwidth.rtc.util.LogLevel
 import kotlinx.coroutines.Dispatchers
@@ -56,6 +57,8 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
     var showStatsOverlay by mutableStateOf(false)
     var dtmfDuration by mutableIntStateOf(300)
     var isOutboundCall by mutableStateOf(false)
+        private set
+    var pendingStream by mutableStateOf<RtcStream?>(null)
         private set
 
     val localAudioLevels = mutableStateListOf<Float>()
@@ -120,7 +123,10 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
                 endpointId = result.endpointId
                 statusText = "Connecting to BRTC..."
 
-                brtc.connect(authParams = RtcAuthParams(endpointToken = result.token))
+                brtc.connect(
+                    authParams = RtcAuthParams(endpointToken = result.token),
+                    options = RtcOptions(autoAccept = false)
+                )
 
                 statusText = "Publishing media..."
                 val stream = brtc.publish(audio = true)
@@ -147,6 +153,7 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
         }
         localStream = null
         remoteStream = null
+        pendingStream = null
         endpointId = null
         connectionState = ConnectionState.DISCONNECTED
         statusText = ""
@@ -265,38 +272,85 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
 
     fun acceptIncomingCall() {
         if (connectionState != ConnectionState.RINGING) return
-        connectionState = ConnectionState.IN_CALL
-        statusText = "Connecting..."
+
+        val pending = pendingStream
+        pendingStream = null
         callDuration = 0
 
-        recordIncomingCall("Incoming Call")
-
-        val eid = endpointId ?: run {
-            statusText = "Error: no endpoint"
-            return
-        }
-
-        viewModelScope.launch(Dispatchers.IO) {
+        viewModelScope.launch {
             try {
-                val url = "${serverURL.trimEnd('/')}/simulate-incoming-call"
-                val json = JSONObject().apply {
-                    put("endpointId", eid)
-                    put("delaySeconds", 0)
+                // If there's a parked stream from the SDK, accept it now
+                if (pending != null && pending.autoAccepted == false) {
+                    brtc.acceptStream()
+                    launch(Dispatchers.Main) {
+                        connectionState = ConnectionState.IN_CALL
+                        statusText = "Connected"
+                        remoteStream = pending
+                        recordIncomingCall("Incoming Call")
+                        startCallTimer()
+                    }
+                } else {
+                    // Fall back to backend-simulated call flow (for testing/demo)
+                    val eid = endpointId ?: run {
+                        launch(Dispatchers.Main) {
+                            statusText = "Error: no endpoint"
+                        }
+                        return@launch
+                    }
+
+                    connectionState = ConnectionState.IN_CALL
+                    statusText = "Connecting..."
+
+                    recordIncomingCall("Incoming Call")
+
+                    launch(Dispatchers.IO) {
+                        try {
+                            val url = "${serverURL.trimEnd('/')}/simulate-incoming-call"
+                            val json = JSONObject().apply {
+                                put("endpointId", eid)
+                                put("delaySeconds", 0)
+                            }
+                            val body = json.toString().toRequestBody("application/json".toMediaType())
+                            val request = Request.Builder().url(url).post(body).build()
+                            OkHttpClient().newCall(request).execute()
+                        } catch (e: Exception) {
+                            launch(Dispatchers.Main) {
+                                showErrorMessage(e.message ?: "Failed to initiate incoming call")
+                            }
+                        }
+                    }
                 }
-                val body = json.toString().toRequestBody("application/json".toMediaType())
-                val request = Request.Builder().url(url).post(body).build()
-                OkHttpClient().newCall(request).execute()
             } catch (e: Exception) {
                 launch(Dispatchers.Main) {
-                    showErrorMessage(e.message ?: "Failed to initiate incoming call")
+                    showErrorMessage(e.message ?: "Failed to accept stream")
+                    connectionState = ConnectionState.RINGING
+                    pendingStream = pending
                 }
             }
         }
     }
 
     fun declineIncomingCall() {
-        if (connectionState == ConnectionState.RINGING || connectionState == ConnectionState.IN_CALL) {
-            hangup()
+        if (connectionState != ConnectionState.RINGING && connectionState != ConnectionState.IN_CALL) {
+            return
+        }
+
+        val pending = pendingStream
+        pendingStream = null
+
+        viewModelScope.launch {
+            try {
+                // If there's a parked stream, decline it via SDK
+                if (pending != null && pending.autoAccepted == false) {
+                    brtc.declineStream()
+                }
+            } catch (e: Exception) {
+                Log.e("CallViewModel", "Failed to decline stream: ${e.message}")
+            }
+
+            launch(Dispatchers.Main) {
+                hangup()
+            }
         }
     }
 
@@ -314,6 +368,17 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
             viewModelScope.launch(Dispatchers.Main) {
                 remoteStream = stream
                 stopCallStatusPolling()
+
+                // Handle parked (non-auto-accepted) streams
+                if (stream.autoAccepted == false) {
+                    // Stream is parked; app must call acceptStream() or declineStream()
+                    pendingStream = stream
+                    if (connectionState == ConnectionState.CONNECTED) {
+                        connectionState = ConnectionState.RINGING
+                        statusText = "Incoming call"
+                    }
+                    return@launch
+                }
 
                 when (connectionState) {
                     ConnectionState.RINGING -> {
@@ -346,6 +411,7 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
         brtc.onStreamUnavailable = { _ ->
             viewModelScope.launch(Dispatchers.Main) {
                 remoteStream = null
+                pendingStream = null
 
                 if (connectionState == ConnectionState.IN_CALL) {
                     finalizeCallRecord()
@@ -362,6 +428,7 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
 
         brtc.onRemoteDisconnected = {
             viewModelScope.launch(Dispatchers.Main) {
+                pendingStream = null
                 if (connectionState == ConnectionState.RINGING) {
                     connectionState = ConnectionState.CONNECTED
                     statusText = "Missed call"

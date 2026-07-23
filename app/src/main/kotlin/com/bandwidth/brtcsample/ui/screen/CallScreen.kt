@@ -52,11 +52,23 @@ private fun RingingLayout(viewModel: CallViewModel) {
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                if (viewModel.isOutboundCall) viewModel.formattedPhoneNumber else "Incoming Call",
+                if (viewModel.isOutboundCall) {
+                    viewModel.formattedPhoneNumber
+                } else {
+                    viewModel.pendingStream?.from ?: "Incoming Call"
+                },
                 color = Color.White,
                 fontSize = 30.sp,
                 fontWeight = FontWeight.Light
             )
+            viewModel.pendingStream?.fromType?.let { fromType ->
+                Text(
+                    "From: $fromType",
+                    color = Color.White.copy(alpha = 0.7f),
+                    fontSize = 14.sp
+                )
+                Spacer(Modifier.height(4.dp))
+            }
             Text(
                 if (viewModel.isOutboundCall) "Ringing..." else "Incoming Call...",
                 color = Color.White.copy(alpha = 0.7f),
