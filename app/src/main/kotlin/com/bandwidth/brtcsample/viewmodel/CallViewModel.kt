@@ -41,6 +41,13 @@ enum class ConnectionState {
     DISCONNECTED, CONNECTING, CONNECTED, RINGING, IN_CALL
 }
 
+/**
+ * Sentinel "to" value that signals a PlayAudio request rather than a real
+ * endpoint-to-endpoint bridge. The gateway responds with a <PlayAudio> BXML
+ * verb when it sees this dummy ENDPOINT target.
+ */
+private const val PLAY_AUDIO_TARGET = "playAudio"
+
 class CallViewModel(application: Application) : AndroidViewModel(application) {
 
     var connectionState by mutableStateOf(ConnectionState.DISCONNECTED)
@@ -57,6 +64,8 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
     var showStatsOverlay by mutableStateOf(false)
     var dtmfDuration by mutableIntStateOf(300)
     var isOutboundCall by mutableStateOf(false)
+        private set
+    var isPlayAudioCall by mutableStateOf(false)
         private set
     var pendingStream by mutableStateOf<RtcStream?>(null)
         private set
@@ -198,8 +207,50 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /**
+     * Dials the demo "Play Audio" destination — a dummy ENDPOINT target with
+     * no bridge peer that the gateway answers with a <PlayAudio> BXML verb.
+     */
+    fun playAudio() {
+        isPlayAudioCall = true
+        isOutboundCall = true
+        connectionState = ConnectionState.RINGING
+        statusText = "Calling Play Audio..."
+
+        val record = CallDetailRecord(
+            phoneNumber = "Play Audio",
+            direction = CallDirection.OUTBOUND
+        )
+        callHistory.addRecord(record)
+        activeCallRecordId = record.id
+
+        viewModelScope.launch {
+            try {
+                val result = brtc.requestOutboundConnection(
+                    id = PLAY_AUDIO_TARGET,
+                    type = EndpointType.ENDPOINT
+                )
+                if (result.accepted) {
+                    statusText = "Ringing..."
+                } else {
+                    isPlayAudioCall = false
+                    isOutboundCall = false
+                    connectionState = ConnectionState.CONNECTED
+                    statusText = "Call not accepted"
+                }
+            } catch (e: Exception) {
+                isPlayAudioCall = false
+                isOutboundCall = false
+                connectionState = ConnectionState.CONNECTED
+                showErrorMessage(e.message ?: "Call failed")
+            }
+        }
+    }
+
     fun hangup() {
         isOutboundCall = false
+        val wasPlayAudioCall = isPlayAudioCall
+        isPlayAudioCall = false
         finalizeCallRecord()
         callTimerJob?.cancel()
         callTimerJob = null
@@ -215,7 +266,13 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
         remoteStream = null
 
         viewModelScope.launch {
-            if (phoneNumber.isNotEmpty()) {
+            if (wasPlayAudioCall) {
+                try {
+                    brtc.hangupConnection(endpoint = PLAY_AUDIO_TARGET, type = EndpointType.ENDPOINT)
+                } catch (e: Exception) {
+                    Log.e("CallViewModel", "BRTC hangup failed: ${e.message}")
+                }
+            } else if (phoneNumber.isNotEmpty()) {
                 try {
                     brtc.hangupConnection(
                         endpoint = e164PhoneNumber,
@@ -226,15 +283,17 @@ class CallViewModel(application: Application) : AndroidViewModel(application) {
                 }
             }
 
-            // Notify backend to terminate the PSTN leg
-            val eid = endpointId
-            Log.d("CallViewModel", "Backend hangup: endpointId=$eid, serverURL=$serverURL")
-            if (eid != null) {
-                try {
-                    tokenService.hangupCall(serverURL, eid)
-                    Log.d("CallViewModel", "Backend hangup succeeded")
-                } catch (e: Exception) {
-                    Log.d("CallViewModel", "Backend hangup failed: ${e.message}")
+            // Notify backend to terminate the PSTN leg (Play Audio has no PSTN leg)
+            if (!wasPlayAudioCall) {
+                val eid = endpointId
+                Log.d("CallViewModel", "Backend hangup: endpointId=$eid, serverURL=$serverURL")
+                if (eid != null) {
+                    try {
+                        tokenService.hangupCall(serverURL, eid)
+                        Log.d("CallViewModel", "Backend hangup succeeded")
+                    } catch (e: Exception) {
+                        Log.d("CallViewModel", "Backend hangup failed: ${e.message}")
+                    }
                 }
             }
         }

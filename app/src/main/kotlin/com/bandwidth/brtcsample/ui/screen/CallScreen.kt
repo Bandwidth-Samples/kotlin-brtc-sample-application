@@ -53,7 +53,7 @@ private fun RingingLayout(viewModel: CallViewModel) {
             Spacer(Modifier.height(16.dp))
             Text(
                 if (viewModel.isOutboundCall) {
-                    viewModel.formattedPhoneNumber
+                    if (viewModel.isPlayAudioCall) "Play Audio" else viewModel.formattedPhoneNumber
                 } else {
                     viewModel.pendingStream?.from ?: "Incoming Call"
                 },
@@ -225,6 +225,14 @@ private fun KeypadTab(viewModel: CallViewModel) {
             }
         }
 
+        Spacer(Modifier.height(12.dp))
+
+        TextButton(onClick = { viewModel.playAudio() }) {
+            Icon(Icons.Filled.PlayCircle, contentDescription = null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(6.dp))
+            Text("Play Audio Demo")
+        }
+
         Spacer(Modifier.weight(1f))
 
         Row(
@@ -364,7 +372,11 @@ private fun InCallLayout(viewModel: CallViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(viewModel.formattedPhoneNumber, color = Color.White, fontSize = 28.sp)
+                    Text(
+                        if (viewModel.isPlayAudioCall) "Play Audio" else viewModel.formattedPhoneNumber,
+                        color = Color.White,
+                        fontSize = 28.sp
+                    )
                     Text(
                         if (viewModel.callDuration > 0) viewModel.callDurationFormatted else viewModel.statusText,
                         color = Color.White.copy(alpha = 0.7f),
