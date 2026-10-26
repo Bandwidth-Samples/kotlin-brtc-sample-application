@@ -39,8 +39,8 @@ This sample application is a single Android app module that demonstrates:
 ### Option A — Clone and build
 
 ```bash
-git clone <repository-url>
-cd brtc-kotlin-sample-application
+git clone https://github.com/Bandwidth-Samples/kotlin-brtc-sample-application.git
+cd kotlin-brtc-sample-application
 ```
 
 Open the project in Android Studio, let Gradle sync, then run the `app` target on your device or emulator.
